@@ -85,19 +85,14 @@ static const char PROGMEM moon_animation[14][8] = {
 };
 #    endif
 
+// we need to draw the moon every frame since snow can overlap with it
 static void draw_moon(void) {
-#    ifdef STATIC_MOON
-    oled_set_cursor(MOON_COLUMN, MOON_LINE);
-    oled_write_raw_P(moon, 6);
-#    endif
-#    ifndef STATIC_MOON
     moon_animation_counter = increment_counter(moon_animation_counter, ANIMATE_MOON_EVERY_N_FRAMES);
     if (moon_animation_counter == 0) {
         moon_animation_frame = increment_counter(moon_animation_frame, 14);
-        oled_set_cursor(MOON_COLUMN, MOON_LINE);
-        oled_write_raw_P(moon_animation[moon_animation_frame], 8);
     }
-#    endif
+    oled_set_cursor(MOON_COLUMN, MOON_LINE);
+    oled_write_raw_P(moon_animation[moon_animation_frame], 8);
 }
 #endif // endregion
 
@@ -230,21 +225,23 @@ uint8_t island_frame_1 = 0;
 // Tree is only 14bytes wide so we save 108 bytes on just the first row. Second row, the
 // first 18 bytes is always the same piece of land, so only store that once, which saves 90 bytes
 static const char PROGMEM islandRightTop[6][14] = {
-    {0x84, 0xEC, 0x6C, 0x3C, 0xF8, 0xFE, 0x3F, 0x6B, 0xDB, 0xB9, 0x30, 0x40, 0x00, 0x00,},
-    {0x80, 0xC3, 0xEE, 0x7C, 0xB8, 0xFC, 0xFE, 0x6F, 0xDB, 0x9B, 0xB2, 0x30, 0x00, 0x00,},
-    {0x00, 0xC0, 0xEE, 0x7F, 0x3D, 0xF8, 0xFC, 0x7E, 0x57, 0xDB, 0xDB, 0x8A, 0x00, 0x00,},
-    {0x00, 0xC0, 0xE6, 0x7F, 0x3B, 0xF9, 0xFC, 0xFC, 0xB6, 0xB3, 0x33, 0x61, 0x00, 0x00,},
-    {0x00, 0x00, 0x00, 0x00, 0x80, 0xEE, 0xFF, 0xFB, 0xF9, 0xFC, 0xDE, 0xB6, 0xB6, 0x24,},
-    {0x00, 0x00, 0x00, 0x00, 0xC0, 0xEE, 0xFE, 0xFF, 0xFB, 0xFD, 0xEE, 0xB6, 0xB6, 0x92,},
+{128,200,236,254,255,254,236,200,128,  0,  0,  0,  0,  0,  },
+{0,128,192,192,232,252,252,254,234,200,128,  0,  0,  0,  },
+{0,  0, 64, 64,112,224,236,248,252,254,122, 96,192,  0,  },
+{0,  0,  0,  0, 48, 96,224,232,248,252,252,222,150,  0,  },
+{0,  0,  0,  0,  0,112,200,224,252,240,252,120, 60, 20,  },
+{0,  0,  0,  0,  0,  0,128,240,200,240,252,180,212,212,  },
 };
 static const char PROGMEM islandRightBottom[6][14] = {
-    {0x41, 0x40, 0x60, 0x3E, 0x3F, 0x23, 0x20, 0x60, 0x41, 0x43, 0x40, 0x40, 0x40, 0x80,},
-    {0x40, 0x41, 0x60, 0x3E, 0x3F, 0x23, 0x20, 0x60, 0x40, 0x40, 0x41, 0x41, 0x40, 0x80,},
-    {0x40, 0x40, 0x61, 0x3D, 0x3F, 0x27, 0x21, 0x60, 0x40, 0x40, 0x40, 0x40, 0x40, 0x80,},
-    {0x40, 0x43, 0x61, 0x3C, 0x3F, 0x27, 0x21, 0x60, 0x41, 0x43, 0x43, 0x42, 0x40, 0x80,},
-    {0x40, 0x40, 0x60, 0x3C, 0x3F, 0x27, 0x23, 0x63, 0x44, 0x40, 0x41, 0x41, 0x41, 0x81,},
-    {0x40, 0x40, 0x60, 0x3C, 0x3F, 0x27, 0x23, 0x63, 0x42, 0x42, 0x41, 0x41, 0x41, 0x80,},
+{65, 65, 97, 53, 63, 63, 33, 97, 65, 65, 64, 64, 64,128,  },
+{64, 64, 96, 48, 52, 63, 63, 97, 65, 67, 66, 64, 64,128,  },
+{64, 64, 96, 48, 58, 62, 63, 99, 65, 67, 67, 68, 64,128,  },
+{64, 64, 96, 48, 56, 58, 62,127, 71, 65, 67, 70, 64,128,  },
+{64, 64, 96, 56, 60, 62, 47,103, 65, 65, 67, 67, 66,128,  },
+{64, 64, 96, 48, 56, 62, 46,103, 71, 65, 67, 66, 70,132,  },
 };
+
+
 static const char PROGMEM islandLeft[18] = {
     0x80, 0x40, 0x40, 0x40, 0x40, 0x60,
     0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
@@ -278,8 +275,8 @@ static void animate_island(void) {
 }
 #endif // endregion
 
-#ifdef ENABLE_STARS       // region
-bool stars_setup = false; // only setup stars once, then we just twinkle them
+#ifdef ENABLE_STARS      // region
+bool snow_setup = false; // only setup stars once, then we just twinkle them
 struct Coordinate {
     int  x;
     int  y;
@@ -296,7 +293,7 @@ struct Coordinate stars[TOTAL_STARS]; // tracks all stars/coordinates
  * Not sure how this function will work with larger or smaller screens.
  * It should be fine, as long as the screen width is a multiple of 8
  */
-static void setup_stars(void) {
+static void spawn_snow(void) {
     // For every line, split the line into STARS_PER_LINE, find a random point in that region, and turn the pixel on
     // 36% probability it will not be added
     // (said another way, 80% chance it will start out lit in the x direction, then 80% chance it will start out lit in the y direction = 64% probability it will start out lit at all)
@@ -318,75 +315,52 @@ static void setup_stars(void) {
             }
         }
     }
-    stars_setup = true;
+    snow_setup = true;
 }
 
-/**
- * Twinkle the stars (move them one pixel in any direction) with a probability of 50% to twinkle any given star
- */
-static void twinkle_stars(void) {
-    for (int line = 0; line < NUMBER_OF_STAR_LINES; ++line) {
-        for (int column_group = 0; column_group < STARS_PER_LINE; ++column_group) {
-            struct Coordinate star = stars[column_group + (line * STARS_PER_LINE)];
-
-            // skip stars that were never added
-            if (!star.exists) {
-                continue;
-            }
-            if (rand() % TWINKLE_PROBABILITY_MODULATOR == 0) {
-                oled_write_pixel(star.x, star.y, false); // black out pixel
-
-                // don't allow stars to leave their own region
-                if (star.x == (column_group * 8)) {                    // star is the farthest left it can go in its region
-                    star.x++;                                          // move it right immediately
-                } else if (star.x == (((column_group + 1) * 8) - 1)) { // star is farthest right it can go in its region
-                    star.x--;                                          // move it left immediately
-                }
-                if (star.y == (line * 8)) {                    // star is the farthest up it can go in its region
-                    star.y++;                                  // move it down immediately
-                } else if (star.y == (((line + 1) * 8) - 1)) { // star is farthest down it can go in its region
-                    star.y--;                                  // move it up immediately
-                }
-
-                // now decide direction
-                int new_x;
-                int x_choice = rand() % 3;
-                if (x_choice == 0) {
-                    new_x = star.x - 1;
-                } else if (x_choice == 1) {
-                    new_x = star.x + 1;
-                } else {
-                    new_x = star.x;
-                }
-
-                int new_y;
-                int y_choice = rand() % 3;
-                if (y_choice == 0) {
-                    new_y = star.y - 1;
-                } else if (y_choice == 1) {
-                    new_y = star.y + 1;
-                } else {
-                    new_y = star.y;
-                }
-
-                star.x = new_x;
-                star.y = new_y;
-                oled_write_pixel(new_x, new_y, true);
-            }
-
-            stars[column_group + (line * STARS_PER_LINE)] = star;
+static void move_snow(void) {
+    for (int i = 0; i < TOTAL_STARS; i++) {
+        struct Coordinate *star = &stars[i];
+        if (!star->exists) {
+            continue;
         }
+
+        oled_write_pixel(star->x, star->y, false);
+
+        uint8_t x_delta, y_delta;
+        if (is_calm || current_wpm <= WAVE_CALM) {
+            x_delta = 0;
+            y_delta = rand() % 2;
+        } else if (current_wpm <= WAVE_HEAVY_STORM) {
+            x_delta = rand() % 2;
+            y_delta = 1;
+        } else if (current_wpm <= WAVE_HURRICANE) {
+            x_delta = 1 + rand() % 2;
+            y_delta = 1 + rand() % 2;
+        } else {
+            x_delta = 1 + rand() % 5;
+            y_delta = 1 + rand() % 2;
+        }
+        star->x += x_delta;
+        star->y += y_delta;
+
+        // its slightly less than the full width to prevent snow clipping into
+        // the ground
+        if (star->y >= OLED_DISPLAY_WIDTH - 20) {
+            star->y = 0;
+        }
+        if (star->x >= OLED_DISPLAY_HEIGHT) {
+            star->x = 0;
+        }
+        oled_write_pixel(star->x, star->y, true);
     }
 }
 
-/**
- * Setup the stars and then animate them on subsequent frames
- */
-static void animate_stars(void) {
-    if (!stars_setup) {
-        setup_stars();
+static void animate_snow(void) {
+    if (!snow_setup) {
+        spawn_snow();
     } else {
-        twinkle_stars();
+        move_snow();
     }
 }
 #endif // endregion
@@ -536,7 +510,7 @@ void render_stars(void) {
         // 1. What if someone wants to move the island up a bit, or they want to have the stars reflect in the water?
         // 2. More cpu intensive. And I'm already running out of cpu as it is...
         if (animation_counter % STAR_ANIMATION_MODULATOR == 0) {
-            animate_stars();
+            animate_snow();
         }
 #endif
 

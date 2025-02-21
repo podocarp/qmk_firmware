@@ -26,7 +26,7 @@
 #define ENABLE_WAVE           // Uses 844 bytes
 #define ENABLE_SHOOTING_STARS // Uses 872 bytes
 #define ENABLE_ISLAND
-#define ENABLE_STARS // Uses 606 bytes
+#define ENABLE_STARS // repurposed to become snow
 
 /**
  * Global Settings
@@ -39,12 +39,9 @@
 /**
  * Moon Parameters
  */
-#define MOON_LINE 4   // the line you want the moon to appear at
-#define MOON_COLUMN 3 // the column you want the moon to appear at
-// #define STATIC_MOON  // uncomment this to make the moon a static image, no animation
-#ifndef STATIC_MOON
-#    define ANIMATE_MOON_EVERY_N_FRAMES 200 // animate the moon every n frames
-#endif
+#define MOON_LINE 4                     // the line you want the moon to appear at
+#define MOON_COLUMN 3                   // the column you want the moon to appear at
+#define ANIMATE_MOON_EVERY_N_FRAMES 200 // animate the moon every n frames
 
 /**
  * Wave Parameters
@@ -61,6 +58,7 @@
 /**
  * Shooting Star Parameters
  */
+#undef ENABLE_SHOOTING_STARS
 #define SHOOTING_STAR_DELAY 12          // delay modulus for time between shooting stars. Decides number of frames to delay, e.g. 12 means 0-11 frames of delay between each shooting star
 #define SHOOTING_STAR_FRAMES 16         // how many 2 pixel frames per shooting star. Increment this for longer shooting stars
 #define MAX_NUMBER_OF_SHOOTING_STARS 12 // maximum number of shooting stars that can be on screen at the same time
@@ -79,7 +77,7 @@
 // What number of frames you want to animate the stars at.
 // Should be equal to or smaller than NUMBER_OF_FRAMES, e.g. 20, would animate on every frame, 10, every other frame, etc
 // Don't set equal to 0.
-#define STAR_ANIMATION_SPEED 1
+#define STAR_ANIMATION_SPEED 20
 
 /**
  * Island Parameters
