@@ -16,8 +16,6 @@
  */
 
 #include "ocean_dream.h"
-#include "quantum.h"
-#include "print.h"
 
 // Calculated Parameters
 #define TWINKLE_PROBABILITY_MODULATOR 100 / TWINKLE_PROBABILITY                            // CALCULATED: Don't Touch
@@ -31,6 +29,12 @@ bool       is_calm                 = false;
 uint32_t   starry_night_anim_timer = 0;
 uint32_t   starry_night_anim_sleep = 0;
 static int current_wpm             = 0;
+
+static uint8_t simple_rand(void) {
+    static uint16_t random = 1;
+    random *= UINT16_C(36563);
+    return (uint8_t)(random >> 8);
+}
 
 static uint8_t increment_counter(uint8_t counter, uint8_t max) {
     counter++;
@@ -187,14 +191,14 @@ static const char PROGMEM ocean_bottom[8][32] = {
 };
 // clang-format on
 
+void draw_ocean(uint8_t frame, uint16_t offset, uint8_t byte_index) {
+    oled_write_raw_byte(pgm_read_byte(ocean_top[frame] + byte_index), offset);
+    oled_write_raw_byte(pgm_read_byte(ocean_bottom[frame] + byte_index), offset + WIDTH);
+}
+
 static void animate_waves(void) {
     starry_night_wave_frame_width_counter = decrement_counter(starry_night_wave_frame_width_counter, WIDTH - 1); // only 3 frames for last wave type
     rough_waves_frame_counter             = increment_counter(rough_waves_frame_counter, 3);                     // only 3 frames for last wave type
-
-    void draw_ocean(uint8_t frame, uint16_t offset, uint8_t byte_index) {
-        oled_write_raw_byte(pgm_read_byte(ocean_top[frame] + byte_index), offset);
-        oled_write_raw_byte(pgm_read_byte(ocean_bottom[frame] + byte_index), offset + WIDTH);
-    }
 
     for (int i = 0; i < WIDTH; ++i) {
         uint16_t offset     = OCEAN_LINE * WIDTH + i;
@@ -249,18 +253,18 @@ static const char PROGMEM islandLeft[18] = {
 };
 // clang-format on
 
+void draw_island_parts(uint8_t frame) {
+    oled_set_cursor(ISLAND_COLUMN + 3, ISLAND_LINE);
+    oled_write_raw_P(islandRightTop[frame], 14);
+    oled_set_cursor(ISLAND_COLUMN + 0, ISLAND_LINE + 1);
+    oled_write_raw_P(islandLeft, 18);
+    oled_set_cursor(ISLAND_COLUMN + 3, ISLAND_LINE + 1);
+    oled_write_raw_P(islandRightBottom[frame], 14);
+}
+
 static void animate_island(void) {
     if (animation_counter == 0) {
         island_frame_1 = increment_counter(island_frame_1, 2);
-    }
-
-    void draw_island_parts(uint8_t frame) {
-        oled_set_cursor(ISLAND_COLUMN + 3, ISLAND_LINE);
-        oled_write_raw_P(islandRightTop[frame], 14);
-        oled_set_cursor(ISLAND_COLUMN + 0, ISLAND_LINE + 1);
-        oled_write_raw_P(islandLeft, 18);
-        oled_set_cursor(ISLAND_COLUMN + 3, ISLAND_LINE + 1);
-        oled_write_raw_P(islandRightBottom[frame], 14);
     }
 
     if (is_calm || current_wpm < ISLAND_CALM) {
@@ -299,8 +303,8 @@ static void spawn_snow(void) {
     // (said another way, 80% chance it will start out lit in the x direction, then 80% chance it will start out lit in the y direction = 64% probability it will start out lit at all)
     for (int line = 0; line < NUMBER_OF_STAR_LINES; ++line) {
         for (int column_group = 0; column_group < STARS_PER_LINE; ++column_group) {
-            uint8_t rand_column = rand() % 10;
-            uint8_t rand_row    = rand() % 10;
+            uint8_t rand_column = simple_rand() % 10;
+            uint8_t rand_row    = simple_rand() % 10;
             if (rand_column < 8 && rand_row < 8) {
                 int column_adder = column_group * 8;
                 int line_adder   = line * 8;
@@ -330,16 +334,16 @@ static void move_snow(void) {
         uint8_t x_delta, y_delta;
         if (is_calm || current_wpm <= WAVE_CALM) {
             x_delta = 0;
-            y_delta = rand() % 2;
+            y_delta = simple_rand() % 2;
         } else if (current_wpm <= WAVE_HEAVY_STORM) {
-            x_delta = rand() % 2;
+            x_delta = simple_rand() % 2;
             y_delta = 1;
         } else if (current_wpm <= WAVE_HURRICANE) {
-            x_delta = 1 + rand() % 2;
-            y_delta = 1 + rand() % 2;
+            x_delta = 1 + simple_rand() % 2;
+            y_delta = 1 + simple_rand() % 2;
         } else {
-            x_delta = 1 + rand() % 5;
-            y_delta = 1 + rand() % 2;
+            x_delta = 1 + simple_rand() % 5;
+            y_delta = 1 + simple_rand() % 2;
         }
         star->x += x_delta;
         star->y += y_delta;
@@ -381,8 +385,8 @@ struct ShootingStar {
 struct ShootingStar shooting_stars[MAX_NUMBER_OF_SHOOTING_STARS]; // tracks all the shooting stars
 
 static void setup_shooting_star(struct ShootingStar *shooting_star) {
-    int column_to_start = rand() % (WIDTH / 2);
-    int row_to_start    = rand() % (HEIGHT - 48); // shooting_stars travel diagonally 1 down, 1 across. So the lowest a shooting_star can start and not 'hit' the ocean is 32 above the ocean.
+    int column_to_start = simple_rand() % (WIDTH / 2);
+    int row_to_start    = simple_rand() % (HEIGHT - 48); // shooting_stars travel diagonally 1 down, 1 across. So the lowest a shooting_star can start and not 'hit' the ocean is 32 above the ocean.
 
     shooting_star->x_1     = column_to_start;
     shooting_star->y_1     = row_to_start;
@@ -390,7 +394,7 @@ static void setup_shooting_star(struct ShootingStar *shooting_star) {
     shooting_star->y_2     = row_to_start + 1;
     shooting_star->running = true;
     shooting_star->frame++;
-    shooting_star->delay = rand() % SHOOTING_STAR_DELAY;
+    shooting_star->delay = simple_rand() % SHOOTING_STAR_DELAY;
 }
 
 static void move_shooting_star(struct ShootingStar *shooting_star) {

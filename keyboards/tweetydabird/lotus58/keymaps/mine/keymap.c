@@ -27,7 +27,7 @@ void process_combo_event(uint16_t combo_index, bool pressed) {
     switch (combo_index) {
         case COMBO_EVENT_BRACES:
             if (pressed) {
-                SEND_STRING("{}" SS_TAP(X_LEFT));
+                SEND_STRING("{}" SS_TAP(X_LEFT) SS_TAP(X_ENTER) SS_TAP(X_ESC) "ko");
             }
             break;
         case COMBO_EVENT_BRACKETS:
